@@ -11,3 +11,5 @@ HTTP client -> FastAPI -> SQLAlchemy engine -> PostgreSQL
 ```
 
 Later phases extend this with GitHub API ingestion, background jobs, analytics, and ML services without changing the public health/startup contract.
+
+The production-shaped local stack is defined in `infrastructure/docker-compose.yml`: PostgreSQL/pgvector, Redis, FastAPI, a Celery worker, and Next.js.

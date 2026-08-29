@@ -25,6 +25,8 @@ The API is available at `http://localhost:8000`; interactive docs are at `/docs`
 
 Run tests from the backend directory with `pytest`.
 
+Run the full local stack with `docker compose -f infrastructure/docker-compose.yml up --build`.
+
 ## Planned structure
 
 ```text
