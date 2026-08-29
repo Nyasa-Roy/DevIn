@@ -6,7 +6,7 @@ DevInsight is an AI-powered software engineering intelligence platform for GitHu
 
 This repository is being implemented incrementally according to the SRS in `docs/project-plan.md`.
 
-Current milestone: **Phase 0 + Phase 1 — project baseline and backend foundation**.
+Current milestone: **Phases 0–15 local implementation baseline**. GitHub OAuth credentials and production cloud credentials remain deployment configuration concerns.
 
 ## Quick start
 
