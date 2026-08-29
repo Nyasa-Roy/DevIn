@@ -72,6 +72,13 @@ h2 { font-size: 18px; margin: 0; }
 .badge { background: #e8f7f1; border-radius: 30px; color: var(--success); font-size: 11px; font-weight: 700; padding: 6px 9px; }
 .search { border: 1px solid var(--line); border-radius: 7px; padding: 10px 12px; width: 230px; }
 .empty-state { padding: 64px 20px; text-align: center; }
+.login-page { align-items: center; background: radial-gradient(circle at 80% 10%, #e7e9ff 0, transparent 35%), var(--canvas); display: flex; justify-content: center; min-height: 100vh; padding: 24px; }
+.login-card { max-width: 440px; padding: 42px; width: 100%; }
+.login-brand { margin: 0 0 56px; }
+.login-card h1 { font-size: 32px; margin-top: 12px; }
+.github-button { display: block; margin-top: 28px; text-align: center; width: 100%; }
+.login-note { color: var(--muted); font-size: 11px; line-height: 1.5; margin: 16px 0 28px; text-align: center; }
+.back-link { color: var(--accent); display: block; font-size: 12px; text-align: center; }
 .error-state { background: #fff8f1; border: 1px solid #f4dfc2; border-radius: 10px; color: var(--warning); padding: 18px; }
 @media (max-width: 850px) { .sidebar { width: 74px; padding: 20px 10px; } .brand { margin: 0 auto 42px; } .brand-name, .nav-label, .nav-link span, .sidebar-footer { display: none; } .nav-link { text-align: center; } .topbar, .content { padding-left: 22px; padding-right: 22px; } .stat-grid { grid-template-columns: repeat(2, 1fr); } .two-col { grid-template-columns: 1fr; } }
 @media (max-width: 520px) { .page-heading { align-items: start; flex-direction: column; gap: 18px; } .stat-grid { grid-template-columns: 1fr; } .topbar-title { display: none; } }

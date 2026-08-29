@@ -15,3 +15,16 @@ def test_health() -> None:
         response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "healthy", "database": "connected"}
+
+
+def test_github_login_requires_configuration() -> None:
+    with TestClient(app) as client:
+        response = client.get("/auth/github")
+    assert response.status_code == 503
+    assert response.json()["detail"] == "GitHub OAuth is not configured"
+
+
+def test_current_user_requires_session() -> None:
+    with TestClient(app) as client:
+        response = client.get("/auth/me")
+    assert response.status_code == 401
