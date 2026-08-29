@@ -34,3 +34,9 @@ def test_repositories_requires_session() -> None:
     with TestClient(app) as client:
         response = client.get("/repositories")
     assert response.status_code == 401
+
+
+def test_pull_request_risk_requires_session() -> None:
+    with TestClient(app) as client:
+        response = client.get("/pull-requests/1/risk")
+    assert response.status_code == 401
