@@ -41,3 +41,41 @@ class SyncJob(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Commit(Base):
+    __tablename__ = "commits"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    repository_id: Mapped[int] = mapped_column(ForeignKey("repositories.id"), index=True)
+    sha: Mapped[str] = mapped_column(String(40), index=True)
+    author_login: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    message: Mapped[str] = mapped_column(Text, default="")
+    committed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class PullRequest(Base):
+    __tablename__ = "pull_requests"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    repository_id: Mapped[int] = mapped_column(ForeignKey("repositories.id"), index=True)
+    github_number: Mapped[int] = mapped_column(index=True)
+    title: Mapped[str] = mapped_column(String(1024))
+    state: Mapped[str] = mapped_column(String(32))
+    author_login: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    changed_files: Mapped[int] = mapped_column(default=0)
+    additions: Mapped[int] = mapped_column(default=0)
+    deletions: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    merged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Issue(Base):
+    __tablename__ = "issues"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    repository_id: Mapped[int] = mapped_column(ForeignKey("repositories.id"), index=True)
+    github_number: Mapped[int] = mapped_column(index=True)
+    title: Mapped[str] = mapped_column(String(1024))
+    state: Mapped[str] = mapped_column(String(32))
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
