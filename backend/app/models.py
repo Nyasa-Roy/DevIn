@@ -66,6 +66,7 @@ class PullRequest(Base):
     changed_files: Mapped[int] = mapped_column(default=0)
     additions: Mapped[int] = mapped_column(default=0)
     deletions: Mapped[int] = mapped_column(default=0)
+    reviews: Mapped[int] = mapped_column(default=0)
     created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     merged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
