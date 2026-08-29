@@ -80,3 +80,12 @@ class Issue(Base):
     title: Mapped[str] = mapped_column(String(1024))
     state: Mapped[str] = mapped_column(String(32))
     created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class File(Base):
+    __tablename__ = "files"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    repository_id: Mapped[int] = mapped_column(ForeignKey("repositories.id"), index=True)
+    path: Mapped[str] = mapped_column(String(2048), index=True)
+    content: Mapped[str] = mapped_column(Text, default="")
