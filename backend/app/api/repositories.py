@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
@@ -6,7 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.github import GitHubClient
-from app.models import Repository, User
+from app.models import Repository, SyncJob, User
+from app.tasks import sync_repository_task
 from app.security import decrypt_token
 
 router = APIRouter(prefix="/repositories", tags=["repositories"])
@@ -67,16 +69,21 @@ def disconnect_repository(repository_id: int, user: User = Depends(require_user)
     db.commit()
 
 
-@router.post("/{repository_id}/sync")
-async def sync_repository(repository_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)) -> dict:
+@router.post("/{repository_id}/sync", status_code=status.HTTP_202_ACCEPTED)
+def sync_repository(repository_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)) -> dict:
     repository = db.scalar(select(Repository).where(Repository.id == repository_id, Repository.owner_id == user.id, Repository.is_connected.is_(True)))
     if repository is None:
         raise HTTPException(status_code=404, detail="Connected repository not found")
-    client = await github_for(user)
-    try:
-        snapshot = await client.repository_snapshot(repository.full_name, repository.default_branch)
-    finally:
-        await client.close()
-    repository.synced_at = datetime.now(timezone.utc)
+    job = SyncJob(id=str(uuid4()), repository_id=repository.id, status="queued")
+    db.add(job)
     db.commit()
-    return {"repository_id": repository.id, "status": "completed", "counts": {key: len(value) for key, value in snapshot.items() if isinstance(value, list)}, "synced_at": repository.synced_at}
+    sync_repository_task.delay(job.id)
+    return {"job_id": job.id, "repository_id": repository.id, "status": job.status}
+
+
+@router.get("/{repository_id}/sync/{job_id}")
+def sync_status(repository_id: int, job_id: str, user: User = Depends(require_user), db: Session = Depends(get_db)) -> dict:
+    job = db.scalar(select(SyncJob).join(Repository).where(SyncJob.id == job_id, SyncJob.repository_id == repository_id, Repository.owner_id == user.id))
+    if job is None:
+        raise HTTPException(status_code=404, detail="Sync job not found")
+    return {"job_id": job.id, "repository_id": job.repository_id, "status": job.status, "error": job.error, "completed_at": job.completed_at}
