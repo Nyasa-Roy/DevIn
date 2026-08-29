@@ -28,3 +28,9 @@ def test_current_user_requires_session() -> None:
     with TestClient(app) as client:
         response = client.get("/auth/me")
     assert response.status_code == 401
+
+
+def test_repositories_requires_session() -> None:
+    with TestClient(app) as client:
+        response = client.get("/repositories")
+    assert response.status_code == 401
