@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,6 +12,7 @@ from app.models import Commit, Repository, SyncJob, User
 from app.services.analytics import repository_metrics
 from app.tasks import sync_repository_task
 from app.security import decrypt_token
+from cryptography.fernet import InvalidToken
 
 router = APIRouter(prefix="/repositories", tags=["repositories"])
 
@@ -26,14 +28,26 @@ def require_user(request: Request, db: Session = Depends(get_db)) -> User:
 async def github_for(user: User) -> GitHubClient:
     if not user.github_token_encrypted:
         raise HTTPException(status_code=400, detail="GitHub account has no usable access token")
-    return GitHubClient(decrypt_token(user.github_token_encrypted))
+    try:
+        return GitHubClient(decrypt_token(user.github_token_encrypted))
+    except InvalidToken as exc:
+        raise HTTPException(status_code=401, detail="Stored GitHub token is invalid; please sign in again") from exc
+
+
+async def github_repositories(client: GitHubClient) -> list[dict]:
+    try:
+        return await client.repositories()
+    except httpx.HTTPStatusError as exc:
+        raise HTTPException(status_code=502, detail=f"GitHub API rejected the request ({exc.response.status_code}); please sign in again") from exc
+    except httpx.RequestError as exc:
+        raise HTTPException(status_code=503, detail="GitHub API is temporarily unreachable") from exc
 
 
 @router.get("")
 async def list_repositories(user: User = Depends(require_user), db: Session = Depends(get_db)) -> list[dict]:
     client = await github_for(user)
     try:
-        accessible = await client.repositories()
+        accessible = await github_repositories(client)
     finally:
         await client.close()
     connected = {repo.github_id: repo for repo in db.scalars(select(Repository).where(Repository.owner_id == user.id)).all()}
@@ -67,7 +81,7 @@ def repository_activity(repository_id: int, user: User = Depends(require_user), 
 async def connect_repository(github_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)) -> dict:
     client = await github_for(user)
     try:
-        accessible = await client.repositories()
+        accessible = await github_repositories(client)
         item = next((repo for repo in accessible if repo["id"] == github_id), None)
         if item is None:
             raise HTTPException(status_code=404, detail="Repository not found or inaccessible")
