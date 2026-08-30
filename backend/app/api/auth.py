@@ -55,7 +55,7 @@ async def github_callback(request: Request, code: str | None = None, state: str 
         user.github_token_encrypted = encrypt_token(access_token)
     db.commit()
     request.session["user_id"] = user.id
-    return RedirectResponse("/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(f"{settings.frontend_url}/dashboard", status_code=status.HTTP_303_SEE_OTHER)
 
 
 @router.get("/me")

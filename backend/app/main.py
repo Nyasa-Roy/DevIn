@@ -5,7 +5,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from sqlalchemy import text
 
 from app.config import get_settings
-from app.db import engine
+from app.db import apply_local_schema_updates, engine
 from app.db import Base
 from app.api.auth import router as auth_router
 from app.api.repositories import router as repositories_router
@@ -15,6 +15,7 @@ from app.api.intelligence import router as intelligence_router
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    apply_local_schema_updates()
     Base.metadata.create_all(bind=engine)
     with engine.connect() as connection:
         connection.execute(text("SELECT 1"))
