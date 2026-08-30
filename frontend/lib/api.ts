@@ -10,3 +10,5 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const getRepositories = () => request<GithubRepository[]>("/repositories");
 export const connectRepository = (id: number) => request<{ id: number; full_name: string; connected: boolean }>(`/repositories/${id}/connect`, { method: "POST" });
+export const syncRepository = (id: number) => request<{ job_id: string; repository_id: number; status: string }>(`/repositories/${id}/sync`, { method: "POST" });
+export const getSyncStatus = (repositoryId: number, jobId: string) => request<{ status: string; error: string | null }>(`/repositories/${repositoryId}/sync/${jobId}`);
