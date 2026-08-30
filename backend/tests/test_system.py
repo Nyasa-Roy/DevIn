@@ -17,11 +17,21 @@ def test_health() -> None:
     assert response.json() == {"status": "healthy", "database": "connected"}
 
 
-def test_github_login_requires_configuration() -> None:
-    with TestClient(app) as client:
+def test_github_login_requires_configuration(monkeypatch) -> None:
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "github_client_id", "")
+    with TestClient(app, follow_redirects=False) as client:
         response = client.get("/auth/github")
     assert response.status_code == 503
     assert response.json()["detail"] == "GitHub OAuth is not configured"
+
+
+def test_github_login_redirects_when_configured() -> None:
+    with TestClient(app, follow_redirects=False) as client:
+        response = client.get("/auth/github")
+    assert response.status_code == 307
+    assert response.headers["location"].startswith("https://github.com/login/oauth/authorize?")
 
 
 def test_current_user_requires_session() -> None:
