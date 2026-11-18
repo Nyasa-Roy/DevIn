@@ -27,7 +27,10 @@ def test_github_login_requires_configuration(monkeypatch) -> None:
     assert response.json()["detail"] == "GitHub OAuth is not configured"
 
 
-def test_github_login_redirects_when_configured() -> None:
+def test_github_login_redirects_when_configured(monkeypatch) -> None:
+    from app.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "github_client_id", "test-client-id")
     with TestClient(app, follow_redirects=False) as client:
         response = client.get("/auth/github")
     assert response.status_code == 307
