@@ -27,7 +27,7 @@ def apply_local_schema_updates() -> None:
     """Add columns introduced after the initial SQLite development database."""
     if not get_settings().database_url.startswith("sqlite"):
         return
-    additions = {"users": {"github_token_encrypted": "VARCHAR(4096)"}, "pull_requests": {"reviews": "INTEGER NOT NULL DEFAULT 0"}}
+    additions = {"users": {"github_token_encrypted": "VARCHAR(4096)", "github_refresh_token_encrypted": "VARCHAR(4096)", "github_token_expires_at": "DATETIME"}, "pull_requests": {"reviews": "INTEGER NOT NULL DEFAULT 0"}}
     inspector = inspect(engine)
     with engine.begin() as connection:
         for table, columns in additions.items():

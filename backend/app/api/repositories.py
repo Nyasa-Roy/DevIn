@@ -13,6 +13,7 @@ from app.services.analytics import repository_metrics
 from app.tasks import sync_repository_task
 from app.security import decrypt_token
 from cryptography.fernet import InvalidToken
+from app.api.auth import require_csrf
 
 router = APIRouter(prefix="/repositories", tags=["repositories"])
 
@@ -28,6 +29,10 @@ def require_user(request: Request, db: Session = Depends(get_db)) -> User:
 async def github_for(user: User) -> GitHubClient:
     if not user.github_token_encrypted:
         raise HTTPException(status_code=400, detail="GitHub account has no usable access token")
+    if user.github_token_expires_at:
+        expires_at = user.github_token_expires_at.replace(tzinfo=timezone.utc) if user.github_token_expires_at.tzinfo is None else user.github_token_expires_at
+        if expires_at <= datetime.now(timezone.utc):
+            raise HTTPException(status_code=401, detail="GitHub token expired; please sign in again")
     try:
         return GitHubClient(decrypt_token(user.github_token_encrypted))
     except InvalidToken as exc:
@@ -78,7 +83,7 @@ def repository_activity(repository_id: int, user: User = Depends(require_user), 
 
 
 @router.post("/{github_id}/connect", status_code=status.HTTP_201_CREATED)
-async def connect_repository(github_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)) -> dict:
+async def connect_repository(github_id: int, user: User = Depends(require_user), _: None = Depends(require_csrf), db: Session = Depends(get_db)) -> dict:
     client = await github_for(user)
     try:
         accessible = await github_repositories(client)
@@ -99,7 +104,7 @@ async def connect_repository(github_id: int, user: User = Depends(require_user),
 
 
 @router.delete("/{repository_id}", status_code=status.HTTP_204_NO_CONTENT)
-def disconnect_repository(repository_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)) -> None:
+def disconnect_repository(repository_id: int, user: User = Depends(require_user), _: None = Depends(require_csrf), db: Session = Depends(get_db)) -> None:
     repository = db.scalar(select(Repository).where(Repository.id == repository_id, Repository.owner_id == user.id))
     if repository is None:
         raise HTTPException(status_code=404, detail="Repository not found")
@@ -108,7 +113,7 @@ def disconnect_repository(repository_id: int, user: User = Depends(require_user)
 
 
 @router.post("/{repository_id}/sync", status_code=status.HTTP_202_ACCEPTED)
-def sync_repository(repository_id: int, user: User = Depends(require_user), db: Session = Depends(get_db)) -> dict:
+def sync_repository(repository_id: int, user: User = Depends(require_user), _: None = Depends(require_csrf), db: Session = Depends(get_db)) -> dict:
     repository = db.scalar(select(Repository).where(Repository.id == repository_id, Repository.owner_id == user.id, Repository.is_connected.is_(True)))
     if repository is None:
         raise HTTPException(status_code=404, detail="Connected repository not found")

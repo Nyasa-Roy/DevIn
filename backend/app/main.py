@@ -25,12 +25,23 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=get_settings().app_name, version="0.1.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=[get_settings().frontend_url], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
-app.add_middleware(SessionMiddleware, secret_key=get_settings().secret_key, https_only=get_settings().environment == "production", same_site="lax")
+app.add_middleware(CORSMiddleware, allow_origins=[get_settings().frontend_url], allow_credentials=True, allow_methods=["GET", "POST", "DELETE", "OPTIONS"], allow_headers=["Content-Type", "X-CSRF-Token"])
+app.add_middleware(SessionMiddleware, secret_key=get_settings().secret_key, max_age=get_settings().session_max_age, https_only=get_settings().environment == "production", same_site="lax")
 app.include_router(auth_router)
 app.include_router(repositories_router)
 app.include_router(pull_requests_router)
 app.include_router(intelligence_router)
+
+
+@app.middleware("http")
+async def security_headers(request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    if get_settings().environment == "production":
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return response
 
 
 @app.get("/", tags=["system"])

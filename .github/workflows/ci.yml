@@ -18,6 +18,8 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest tests -q
+      - run: pip install pip-audit
+      - run: pip-audit
   ml:
     runs-on: ubuntu-latest
     steps:
@@ -41,3 +43,4 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+      - run: npm audit --audit-level=critical

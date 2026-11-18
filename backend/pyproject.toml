@@ -14,7 +14,7 @@ dependencies = [
   "psycopg[binary]>=3.2,<4.0",
   "uvicorn[standard]>=0.32,<1.0",
   "itsdangerous>=2.2,<3.0",
-  "cryptography>=43,<48",
+  "cryptography>=46.0.7,<48",
   "celery[redis]>=5.4,<6.0",
 ]
 

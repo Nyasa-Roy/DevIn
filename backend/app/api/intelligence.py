@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.repositories import require_user
+from app.api.auth import require_csrf
 from app.db import get_db
 from app.models import Repository, User
 from app.services.anomalies import repository_anomalies
@@ -31,6 +32,6 @@ def anomalies(repository_id: int, user: User = Depends(require_user), db: Sessio
 
 
 @router.post("/{repository_id}/search")
-def semantic_search(repository_id: int, request: SearchRequest, user: User = Depends(require_user), db: Session = Depends(get_db)) -> dict:
+def semantic_search(repository_id: int, request: SearchRequest, user: User = Depends(require_user), _: None = Depends(require_csrf), db: Session = Depends(get_db)) -> dict:
     owned_repository(repository_id, user, db)
     return {"query": request.query, "results": search_files(db, repository_id, request.query, request.limit), "retrieval": "lexical-baseline"}

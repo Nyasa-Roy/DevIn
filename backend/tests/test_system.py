@@ -32,6 +32,8 @@ def test_github_login_redirects_when_configured() -> None:
         response = client.get("/auth/github")
     assert response.status_code == 307
     assert response.headers["location"].startswith("https://github.com/login/oauth/authorize?")
+    assert "code_challenge=" in response.headers["location"]
+    assert "redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fauth%2Fgithub%2Fcallback" in response.headers["location"]
 
 
 def test_current_user_requires_session() -> None:
@@ -50,3 +52,9 @@ def test_pull_request_risk_requires_session() -> None:
     with TestClient(app) as client:
         response = client.get("/pull-requests/1/risk")
     assert response.status_code == 401
+
+
+def test_mutating_auth_endpoint_requires_csrf() -> None:
+    with TestClient(app) as client:
+        response = client.post("/auth/logout")
+    assert response.status_code == 403
