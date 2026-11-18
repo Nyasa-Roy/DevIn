@@ -18,7 +18,8 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[dev]"
       - run: pytest tests -q
-      - run: pip install pip-audit
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install pip-audit
       - run: pip-audit
   ml:
     runs-on: ubuntu-latest
