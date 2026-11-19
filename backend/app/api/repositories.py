@@ -55,8 +55,16 @@ async def list_repositories(user: User = Depends(require_user), db: Session = De
         accessible = await github_repositories(client)
     finally:
         await client.close()
-    connected = {repo.github_id: repo for repo in db.scalars(select(Repository).where(Repository.owner_id == user.id)).all()}
-    return [{"id": item["id"], "name": item["name"], "full_name": item["full_name"], "html_url": item["html_url"], "private": item["private"], "connected": item["id"] in connected} for item in accessible]
+    connected = {repo.github_id: repo for repo in db.scalars(select(Repository).where(Repository.owner_id == user.id, Repository.is_connected.is_(True))).all()}
+    return [{
+        "id": item["id"],
+        "repository_id": connected[item["id"]].id if item["id"] in connected else None,
+        "name": item["name"],
+        "full_name": item["full_name"],
+        "html_url": item["html_url"],
+        "private": item["private"],
+        "connected": item["id"] in connected,
+    } for item in accessible]
 
 
 def owned_repository(repository_id: int, user: User, db: Session) -> Repository:
