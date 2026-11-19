@@ -128,7 +128,13 @@ def sync_repository(repository_id: int, user: User = Depends(require_user), _: N
     job = SyncJob(id=str(uuid4()), repository_id=repository.id, status="queued")
     db.add(job)
     db.commit()
-    sync_repository_task.delay(job.id)
+    try:
+        sync_repository_task.delay(job.id)
+    except Exception as exc:
+        job.status = "failed"
+        job.error = "Could not queue the sync. Start Redis and the Celery worker, then try again."
+        db.commit()
+        raise HTTPException(status_code=503, detail=job.error) from exc
     return {"job_id": job.id, "repository_id": repository.id, "status": job.status}
 
 

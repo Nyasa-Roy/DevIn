@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { getSyncStatus, syncRepository } from "../lib/api";
 
-export function SyncButton({ repositoryId }: { repositoryId: number }) {
+export function SyncButton({ repositoryId, onCompleted }: { repositoryId: number; onCompleted?: () => void | Promise<void> }) {
   const [status, setStatus] = useState<"idle" | "queued" | "running" | "completed" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -11,10 +11,18 @@ export function SyncButton({ repositoryId }: { repositoryId: number }) {
     setError(null); setStatus("queued");
     try {
       const job = await syncRepository(repositoryId);
-      const poll = async () => {
+      const poll = async (attempt = 0) => {
         const result = await getSyncStatus(repositoryId, job.job_id);
         setStatus(result.status as typeof status);
-        if (result.status === "queued" || result.status === "running") window.setTimeout(poll, 1500);
+        if (result.status === "completed") await onCompleted?.();
+        if (result.status === "queued" || result.status === "running") {
+          if (attempt >= 20) {
+            setStatus("failed");
+            setError("Sync is not being processed. Check that Redis and the Celery worker are running.");
+            return;
+          }
+          window.setTimeout(() => poll(attempt + 1), 1500);
+        }
         if (result.status === "failed") setError(result.error ?? "Sync failed");
       };
       await poll();

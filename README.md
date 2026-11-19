@@ -25,6 +25,16 @@ The API is available at `http://localhost:8000`; interactive docs are at `/docs`
 
 Run tests from the backend directory with `pytest`.
 
+Repository sync requires Redis and a Celery worker. For a Windows demo, start Redis first and use Celery's `solo` pool:
+
+```powershell
+docker run --name devinsight-redis -p 127.0.0.1:6379:6379 -d redis:7-alpine
+cd backend
+celery -A app.queue.celery_app worker --loglevel=info --pool=solo
+```
+
+If the Redis container already exists but is stopped, run `docker start devinsight-redis` instead.
+
 Run the full local stack with `docker compose -f infrastructure/docker-compose.yml up --build`.
 
 ## Planned structure
