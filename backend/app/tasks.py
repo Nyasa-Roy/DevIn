@@ -68,7 +68,17 @@ def _persist_snapshot(db, repository_id: int, snapshot: dict) -> None:
             continue
         record = db.query(PullRequest).filter_by(repository_id=repository_id, github_number=number).first()
         if record is None:
-            db.add(PullRequest(repository_id=repository_id, github_number=number, title=item.get("title", ""), state=item.get("state", "open"), author_login=(item.get("user") or {}).get("login"), created_at=_parse_datetime(item.get("created_at")), merged_at=_parse_datetime(item.get("merged_at"))))
+            record = PullRequest(repository_id=repository_id, github_number=number)
+            db.add(record)
+        record.title = item.get("title", "")
+        record.state = item.get("state", "open")
+        record.author_login = (item.get("user") or {}).get("login")
+        record.changed_files = int(item.get("changed_files") or 0)
+        record.additions = int(item.get("additions") or 0)
+        record.deletions = int(item.get("deletions") or 0)
+        record.reviews = int(item.get("review_count") or 0)
+        record.created_at = _parse_datetime(item.get("created_at"))
+        record.merged_at = _parse_datetime(item.get("merged_at"))
     for item in snapshot.get("issues", []):
         number = item.get("number")
         if number is None or db.query(Issue).filter_by(repository_id=repository_id, github_number=number).first():

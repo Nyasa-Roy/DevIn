@@ -1,3 +1,5 @@
+import asyncio
+
 import httpx
 
 
@@ -23,4 +25,16 @@ class GitHubClient:
 
     async def repository_snapshot(self, full_name: str, default_branch: str) -> dict:
         branches, commits, pulls, issues = await self._get(f"/repos/{full_name}/branches", per_page=100), await self._get(f"/repos/{full_name}/commits", per_page=100), await self._get(f"/repos/{full_name}/pulls", state="all", per_page=100), await self._get(f"/repos/{full_name}/issues", state="all", per_page=100)
-        return {"default_branch": default_branch, "branches": branches, "commits": commits, "pull_requests": pulls, "issues": [issue for issue in issues if "pull_request" not in issue]}
+        semaphore = asyncio.Semaphore(5)
+
+        async def hydrate_pull_request(item: dict) -> dict:
+            async with semaphore:
+                number = item["number"]
+                details, reviews = await asyncio.gather(
+                    self._get(f"/repos/{full_name}/pulls/{number}"),
+                    self._get(f"/repos/{full_name}/pulls/{number}/reviews", per_page=100),
+                )
+                return {**item, **details, "review_count": len(reviews)}
+
+        hydrated_pulls = await asyncio.gather(*(hydrate_pull_request(item) for item in pulls))
+        return {"default_branch": default_branch, "branches": branches, "commits": commits, "pull_requests": hydrated_pulls, "issues": [issue for issue in issues if "pull_request" not in issue]}

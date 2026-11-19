@@ -5,6 +5,7 @@ export type GithubRepository = { id: number; repository_id: number | null; name:
 export type RepositoryOverview = { repository_id: number; period_days: number; health_score: number; commits: number; pull_requests: number; open_pull_requests: number; merged_pull_requests: number; issues: number; open_issues: number; contributors: number; average_pr_size: number };
 export type RepositoryActivity = { commits: Array<{ sha: string; author: string | null; message: string; committed_at: string | null }> };
 export type CurrentUser = { id: number; github_id: number; login: string; avatar_url: string | null };
+export type PullRequestAnalysis = { id: number; number: number; title: string; state: string; risk: { pull_request_id: number; github_number: number; risk_score: number; risk_percent: number; risk_level: "LOW" | "MEDIUM" | "HIGH"; explanations: string[]; model: string } };
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const method = options?.method?.toUpperCase() ?? "GET";
@@ -21,6 +22,7 @@ export const getCurrentUser = () => request<CurrentUser>("/auth/me");
 export const connectRepository = (id: number) => request<{ id: number; github_id: number; full_name: string; connected: boolean }>(`/repositories/${id}/connect`, { method: "POST" });
 export const getRepositoryOverview = (id: number) => request<RepositoryOverview>(`/repositories/${id}/overview`);
 export const getRepositoryActivity = (id: number) => request<RepositoryActivity>(`/repositories/${id}/activity`);
+export const getPullRequests = (id: number) => request<PullRequestAnalysis[]>(`/repositories/${id}/pull-requests`);
 export const syncRepository = (id: number) => request<{ job_id: string; repository_id: number; status: string }>(`/repositories/${id}/sync`, { method: "POST" });
 export const getSyncStatus = (repositoryId: number, jobId: string) => request<{ status: string; error: string | null }>(`/repositories/${repositoryId}/sync/${jobId}`);
 export async function logout(): Promise<void> {
